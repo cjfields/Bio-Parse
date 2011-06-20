@@ -19,27 +19,27 @@ sub new {
         $self->_initialize(@args);
 		return $self;
 	} else {
-        my %param;
-        if (scalar(@args) == 2 || scalar(@args) % 2) {
-            # simplest form
-            @param{qw(fh format)} = @args[0..1]
-        } else {
-            %param = @args;
-            @param{ map { lc $_ } keys %param } = values %param; # lowercase keys
+        my %param = @args;
+        @param{ map { lc $_ } keys %param } = values %param; # lowercase keys
+        my $fh = $param{fh};
+        # required params
+        unless ( ( ref $fh && ( ref $fh eq 'GLOB' ) )
+             || ( blessed $fh && ( $fh->isa('IO::Handle')
+                                || $fh->isa('IO::String') ) ) ) {
+            Carp::croak "'fh' parameter not provided or invalid, must ".
+            "provide IO::Handle-based filehandle, got ".ref($param{fh});
+        }
 
-            # required params
-            if(!blessed($param{fh}) || !$param{fh}->isa('IO::Handle')) {
-                Carp::croak "'fh' parameter not provided or invalid, must provide IO::Handle-based filehandle";
-            }
-            $param{format} || Carp::croak "No 'format' provided; format guessing not implemented"
+        if (!defined($param{format})) {
+            Carp::croak "No 'format' provided; format guessing not implemented"
         }
         $param{format} = "\L$param{format}";	# normalize capitalization to lower case
         if ($param{format} =~ /-/) {
-            ($param{format}, my $variant) = split('-', $param{format}, 2);
-            push @args, (variant => $variant);
+            ($param{format}, $param{variant}) = split('-', $param{format}, 2);
         }
-        return unless( $class->_load_format_module($param{format}) );
-        return "Bio::Parse::$param{format}"->new(@args);
+        Carp::croak "Unknown module Bio::Parse::$param{format}"
+            unless( $class->_load_format_module($param{format}) );
+        return "Bio::Parse::$param{format}"->new(%param);
     }
 }
 
@@ -62,9 +62,7 @@ sub variant {
 }
 
 # grab next chunk of data from fh (implement in actual parser!)
-sub next_dataset {
-    ...
-}
+sub next_dataset {...}
 
 # utility methods for parsers
 
@@ -87,6 +85,11 @@ sub confess {
     Carp::confess shift;
 }
 
+sub method_not_implemented {
+    my $self = shift;
+    (caller(1))[3]." is not implemented by ".ref($self)
+}
+
 # lifted from Bio::SeqIO, but using Module::Load
 sub _load_format_module {
 	my ($self, $format) = @_;
@@ -94,18 +97,19 @@ sub _load_format_module {
 	my $ok;
 
 	eval {
-		$ok = load $module;
+		load $module;
+        1;
 	};
 	if ( $@ ) {
 		confess <<END;
 $self: $format cannot be found
 Exception $@
-For more information about the SeqIO system please see the SeqIO docs.
-This includes ways of checking for formats at compile time, not run time
+For more information about the Bio::Parse system please see the Bio::Parse docs.
 END
 		;
-	}
-	return $ok;
+	} else {
+        1
+    }
 }
 
 1;
