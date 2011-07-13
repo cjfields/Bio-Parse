@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use base 'Bio::Parse';
 
-my $PREFIX;
+my $ATT_PREFIX;
 my $URI_ENCODE = ';=%&,\t\n\r\x00-\x1f';
 my $GFF_SPLIT = "\t";
 my $ATTRIBUTE_SPLIT = "=";
@@ -20,7 +20,7 @@ sub _initialize {
 
 sub next_dataset {
     my $self = shift;
-    my $fh = $self->_fh;
+    my $fh = $self->{fh};
     my $dataset;
     my $len = 0;
     GFFLINE:
@@ -136,3 +136,5 @@ sub gff3_convert {
 1;
 
 __END__
+
+

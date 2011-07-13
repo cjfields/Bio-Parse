@@ -23,11 +23,12 @@ sub new {
         @param{ map { lc $_ } keys %param } = values %param; # lowercase keys
         my $fh = $param{fh};
         # required params
-        unless ( ( ref $fh && ( ref $fh eq 'GLOB' ) )
+        unless ( ( ref $fh && ( ref($fh) ~~ 'GLOB' ) )
              || ( blessed $fh && ( $fh->isa('IO::Handle')
-                                || $fh->isa('IO::String') ) ) ) {
+                                || $fh->isa('IO::String') ) )
+             ) {
             Carp::croak "'fh' parameter not provided or invalid, must ".
-            "provide IO::Handle-based filehandle, got ".ref($param{fh});
+            "provide a filehandle or IO::Handle-based filehandle, got ".ref($param{fh});
         }
 
         if (!defined($param{format})) {
