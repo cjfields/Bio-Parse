@@ -2,7 +2,7 @@ package Bio::Parse;
 
 # ABSTRACT: Somewhat low-level biological file format parser
 
-use 5.012; # get nice 5.12 features like ..., may revert to 5.10 at some point
+use 5.012; # get nice 5.12 features like yada, may revert to 5.10 at some point
 use strict;
 use warnings;
 use IO::Unread;  # pushback buffering, stack-based
@@ -43,6 +43,10 @@ sub new {
     }
 }
 
+sub _initialize {
+    # noop for now
+}
+
 # immutable
 sub fh {
     my $self = shift;
@@ -59,6 +63,13 @@ sub format {
 sub variant {
     my $self = shift;
     $self->{variant};
+}
+
+# for keys that may be passed on as parameters down the way
+# default: ''
+sub prefix {
+    my $self = shift;
+    $self->{prefix} || '';
 }
 
 # grab next chunk of data from fh (implement in actual parser!)
