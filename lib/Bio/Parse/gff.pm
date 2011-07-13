@@ -7,19 +7,22 @@ use base 'Bio::Parse';
 
 my $PREFIX;
 my $URI_ENCODE = ';=%&,\t\n\r\x00-\x1f';
-#my $GFF_SPLIT = "\t";
-my $ATTRIBUTE_SPLIT = '=';
+#my $GFF_SPLIT = "\t";   # TODO
+my $ATTRIBUTE_SPLIT;
 my $ATTRIBUTE_CONVERT = \&gff3_convert;
 my @GFF_COLUMNS;
 
 sub _initialize {
-    my ($self, @args) = @_;
+    my ($self, %args) = @_;
     # cache locally for speed
-    $self->SUPER::_initialize(@args);
+    $self->SUPER::_initialize(%args);
     $PREFIX = $self->prefix;
     # features
     @GFF_COLUMNS = map {"$PREFIX$_"} qw(seq_id source primary_tag start end
                        score strand phase);
+    $ATTRIBUTE_SPLIT = exists $args{attribute_split} ?
+        qr/$args{attribute_split}/o :
+        qr/=/o;
 }
 
 sub next_dataset {
@@ -33,15 +36,15 @@ sub next_dataset {
         given ($line) {
             when (/(?:\t[^\t]+){8}/)  {
                 chomp $line;
-                $self->{mode} = $dataset->{MODE} = 'feature';
+                $self->{mode} = $dataset->{MODE} = 'FEATURE';
                 my (%feat, %tags, $attstr);
                 # validate here?
                 (@feat{@GFF_COLUMNS}, $attstr) =
                     map {$_ ne '.' ? $_ : undef } split("\t",$line);
 
                 for my $kv (split(/\s*;\s*/, $attstr)) {
-                    my ($key, $rest) = split("$ATTRIBUTE_SPLIT", $kv, 2);
-                    $self->throw("Attributes not split correctly, $attstr; ".
+                    my ($key, $rest) = split($ATTRIBUTE_SPLIT, $kv, 2);
+                    $self->throw("Attributes not split correctly:\n$kv\n".
                                  "make sure format is correct") if !defined($rest);
                     my @vals = map { $ATTRIBUTE_CONVERT->($_) } split(',',$rest);
                     $tags{$key} = \@vals;
@@ -53,24 +56,27 @@ sub next_dataset {
             when (/^(\#{1,2})\s*(\S+)\s*([^\n]+)?$/) { # comments and directives
                 if (length($1) == 1) {
                     chomp $line;
-                    @{$dataset}{qw(MODE DATA)} = ('comment', {DATA => $line});
+                    # per GFF3 spec, this is a generic comment that can be
+                    # ignored, nothing to use; higher-level parsers could
+                    # probably do something with this, though so we pass it on
+                    @{$dataset}{qw(MODE DATA)} = ('COMMENT', {DATA => $line});
                 } else {
-                    $self->{mode} = 'directive';
+                    $self->{mode} = 'DIRECTIVE';
                     @{$dataset}{qw(MODE DATA)} =
-                        ('directive', $self->directive($2, $3));
+                        ('DIRECTIVE', $self->directive($2, $3));
                 }
             }
-            when (/^>/) {          # sequence
+            when (/^>(.*)$/) {          # sequence
                 chomp $line;
                 @{$dataset}{qw(MODE DATA)} =
-                    ('sequence', {'sequence-header' =>  $line});
-                $self->{mode} = 'sequence';
+                    ('SEQUENCE', {'sequence-header' =>  $1});
+                $self->{mode} = 'SEQUENCE';
             }
             default {
-                if ($self->{mode} eq 'sequence') {
+                if ($self->{mode} eq 'SEQUENCE') {
                     chomp $line;
                     @{$dataset}{qw(MODE DATA)} =
-                        ('sequence', {sequence => $line});
+                        ('SEQUENCE', {sequence => $line});
                 } else {
                     # anything else should be sequence, but there should be some
                     # kind of directive to change the mode or a typical FASTA
@@ -141,5 +147,3 @@ sub gff3_convert {
 1;
 
 __END__
-
-

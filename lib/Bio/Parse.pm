@@ -20,7 +20,7 @@ sub new {
 		return $self;
 	} else {
         my %param = @args;
-        @param{ map { lc $_ } keys %param } = values %param; # lowercase keys
+        @param{ map { s/-//; lc } keys %param } = values %param;
         my $fh = $param{fh};
         # required params
         unless ( ( ref $fh && ( ref($fh) ~~ 'GLOB' ) )
