@@ -5,10 +5,16 @@ use strict;
 use warnings;
 use base 'Bio::Parse';
 
+# cached values
 my $PREFIX;
-my $URI_ENCODE = ';=%&,\t\n\r\x00-\x1f';
-#my $GFF_SPLIT = "\t";   # TODO
 my $ATTRIBUTE_SPLIT;
+
+# TODO : implement URI encode/decode (switch to URI::Encode)
+my $URI_ENCODE = ';=%&,\t\n\r\x00-\x1f';
+
+my $GFF_SPLIT;   # TODO : allow spaces instead of tabs? seems dangerous...
+
+# TODO : implement GTF/GFF2-specific att parsing
 my $ATTRIBUTE_CONVERT = \&gff3_convert;
 my @GFF_COLUMNS;
 
@@ -45,7 +51,8 @@ sub next_dataset {
                 for my $kv (split(/\s*;\s*/, $attstr)) {
                     my ($key, $rest) = split($ATTRIBUTE_SPLIT, $kv, 2);
                     $self->throw("Attributes not split correctly:\n$kv\n".
-                                 "make sure format is correct") if !defined($rest);
+                                 "make sure attribute_split is set correctly ".
+                                 "(currently $ATTRIBUTE_SPLIT)") if !defined($rest);
                     my @vals = map { $ATTRIBUTE_CONVERT->($_) } split(',',$rest);
                     $tags{$key} = \@vals;
                 }
