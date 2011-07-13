@@ -5,17 +5,21 @@ use strict;
 use warnings;
 use base 'Bio::Parse';
 
-my $ATT_PREFIX;
+my $PREFIX;
 my $URI_ENCODE = ';=%&,\t\n\r\x00-\x1f';
-my $GFF_SPLIT = "\t";
-my $ATTRIBUTE_SPLIT = "=";
+#my $GFF_SPLIT = "\t";
+my $ATTRIBUTE_SPLIT = '=';
 my $ATTRIBUTE_CONVERT = \&gff3_convert;
+my @GFF_COLUMNS;
 
 sub _initialize {
     my ($self, @args) = @_;
     # cache locally for speed
     $self->SUPER::_initialize(@args);
-    $ATT_PREFIX = $self->prefix;
+    $PREFIX = $self->prefix;
+    # features
+    @GFF_COLUMNS = map {"$PREFIX$_"} qw(seq_id source primary_tag start end
+                       score strand phase);
 }
 
 sub next_dataset {
@@ -32,16 +36,17 @@ sub next_dataset {
                 $self->{mode} = $dataset->{MODE} = 'feature';
                 my (%feat, %tags, $attstr);
                 # validate here?
-                (@feat{qw(-seq_id -source -primary_tag -start -end
-                       -score -strand -phase)}, $attstr) =
-                    map {$_ ne '.' ? $_ : undef } split($GFF_SPLIT,$line);
+                (@feat{@GFF_COLUMNS}, $attstr) =
+                    map {$_ ne '.' ? $_ : undef } split("\t",$line);
 
                 for my $kv (split(/\s*;\s*/, $attstr)) {
                     my ($key, $rest) = split("$ATTRIBUTE_SPLIT", $kv, 2);
+                    $self->throw("Attributes not split correctly, $attstr; ".
+                                 "make sure format is correct") if !defined($rest);
                     my @vals = map { $ATTRIBUTE_CONVERT->($_) } split(',',$rest);
                     $tags{$key} = \@vals;
                 }
-                $feat{-tag} = \%tags;
+                $feat{"${PREFIX}tag"} = \%tags;
                 $dataset->{DATA} = \%feat;
             }
             when (/^\s*$/) {  next GFFLINE  } # blank lines

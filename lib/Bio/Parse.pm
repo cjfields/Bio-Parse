@@ -86,14 +86,17 @@ sub pushback {
 
 # simple base exceptions
 sub throw {
+    my $self = shift;
     Carp::croak shift;
 }
 
 sub warn {
+    my $self = shift;
     Carp::carp shift;
 }
 
 sub confess {
+    my $self = shift;
     Carp::confess shift;
 }
 
@@ -166,3 +169,18 @@ NOTAGOAL:
     like for those to be distributed independently of these modules. Note, this
     also allows one to write up other means of parsing (such as C-based parsers)
     independently.
+
+SIMPLE DATA FORMAT
+
+# data relevant
+MODE = the data type being passed (as well as it can be defined)
+DATA = a data structure (generally a hash reference) containing the data chunk
+parsed
+
+# for those interested in indexing a file for whatever reason:
+START = start of the data chunk in the data stream
+LENGTH = length of the data chunk
+
+# Should we have different levels of a parse (e.g. if we are only interested
+in indexing on a per-record basis, maybe just parse at the top-level? That might
+be possible...
