@@ -12,13 +12,13 @@ use Module::Load;
 
 # lifted from Bio::SeqIO for our own nefarious purposes
 sub new {
-	my ($caller,@args) = @_;
-	my $class = ref($caller) || $caller;
-	if( $class =~ /Bio::Parse::(\S+)/ ) {
-		my ($self) = bless {@args}, $class;
+    my ($caller,@args) = @_;
+    my $class = ref($caller) || $caller;
+    if( $class =~ /Bio::Parse::(\S+)/ ) {
+        my ($self) = bless {@args}, $class;
         $self->_initialize(@args);
-		return $self;
-	} else {
+        return $self;
+    } else {
         my %param = @args;
         @param{ map { s/-//; lc } keys %param } = values %param;
         my $fh = $param{fh};
@@ -34,7 +34,7 @@ sub new {
         if (!defined($param{format})) {
             Carp::croak "No 'format' provided; format guessing not implemented"
         }
-        $param{format} = "\L$param{format}";	# normalize capitalization to lower case
+        $param{format} = "\L$param{format}";    # normalize capitalization to lower case
         if ($param{format} =~ /-/) {
             ($param{format}, $param{variant}) = split('-', $param{format}, 2);
         }
@@ -107,22 +107,22 @@ sub method_not_implemented {
 
 # lifted from Bio::SeqIO, but using Module::Load
 sub _load_format_module {
-	my ($self, $format) = @_;
-	my $module = "Bio::Parse::" . $format;
-	my $ok;
+    my ($self, $format) = @_;
+    my $module = "Bio::Parse::" . $format;
+    my $ok;
 
-	eval {
-		load $module;
+    eval {
+        load $module;
         1;
-	};
-	if ( $@ ) {
-		confess <<END;
+    };
+    if ( $@ ) {
+        confess <<END;
 $self: $format cannot be found
 Exception $@
 For more information about the Bio::Parse system please see the Bio::Parse docs.
 END
-		;
-	} else {
+        ;
+    } else {
         1
     }
 }
