@@ -6,8 +6,8 @@ use warnings;
 use base 'Bio::Parse';
 
 # cached values
-my $PREFIX;
-my $ATTRIBUTE_SPLIT;
+my $PREFIX; # to make bioperl-like args for instances, make this '-'
+my $ATTRIBUTE_SPLIT; # GFF3 = "\t", GFF2 = ' ' TODO: needs validation per type
 
 # TODO : implement URI encode/decode (switch to URI::Encode)
 my $URI_ENCODE = ';=%&,\t\n\r\x00-\x1f';
@@ -154,3 +154,7 @@ sub gff3_convert {
 1;
 
 __END__
+
+MODES = FEATURE, SEQUENCE, COMMENT, DIRECTIVE
+
+
