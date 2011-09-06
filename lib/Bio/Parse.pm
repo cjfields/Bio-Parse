@@ -48,19 +48,16 @@ sub _initialize {
     # noop for now
 }
 
-# immutable
 sub fh {
     my $self = shift;
     $self->{fh};
 }
 
-# immutable
 sub format {
     my $self = shift;
     $self->{format};
 }
 
-# immutable
 sub variant {
     my $self = shift;
     $self->{variant};
