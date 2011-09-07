@@ -23,7 +23,8 @@ sub new {
         @param{ map { s/-//; lc } keys %param } = values %param;
         my $fh = $param{fh};
         # required params
-        unless ( ( ref $fh && ( ref($fh) ~~ 'GLOB' ) )
+        unless ( $param{file} ||
+                ( ref $fh && ( ref($fh) ~~ 'GLOB' ) )
              || ( blessed $fh && ( $fh->isa('IO::Handle')
                                 || $fh->isa('IO::String') ) )
              ) {
@@ -45,10 +46,22 @@ sub new {
 }
 
 sub _initialize {
-    # noop for now
+    # noop, subclasses override as needed...
 }
 
 sub fh {
+    my $self = shift;
+    # we could probably include a convenience for using PerlIO layers here
+    # (normalizing line endings, etc.)
+
+    if (!exists $self->{fh} && exists $self->{file}) {
+        open(my $fh, '<', $self->{file}) || die "Unknown file: $!";
+        $self->{fh} = $fh;
+    }
+    $self->{fh};
+}
+
+sub file {
     my $self = shift;
     $self->{fh};
 }

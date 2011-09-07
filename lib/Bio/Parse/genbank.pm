@@ -12,62 +12,43 @@ use Data::Dumper;
 #    $self->SUPER::_initialize(%args);
 #}
 
-sub next_dataset {
+sub _next_dataset {
     my $self = shift;
-    local $/ = "\n";
-    my $fh = $self->{fh};
-    #my $mode = $self->{mode};
-
+    my $fh = $self->fh;
     PARSER:
     while (defined(my $line = <$fh>)) {
         next if $line =~ m{^\s*$};
-        my ($ann, $data);
+        chomp;
+        my ($key);
         given ($line) {
-            # annotation and features
-            when (m{^(\s{0,5})(\w+)\s+(.*)$}ox) {
-                ($ann, $data) = ($2, $3);
-                #unless ($seenlocus) {
-                #    $self->throw("No LOCUS found.  Not GenBank in my book!")
-                #        if ($ann ne 'LOCUS');
-                #    $seenlocus = 1;
-                #}
-                # use the spacer to determine the annotation type
-                #my $len = length($1 || '');
-                #my $annkey  = ($len == 0 || $len > 4)   ? 'DATA'  : $ann;
-                ## Push off the previously cached data to the handler
-                ## whenever a new primary annotation or seqfeature is found
-                ## Note use of $endrec for catching end of record
-                #if (($annkey eq 'DATA') && $seqdata) {
-                #    chomp $seqdata->{DATA};
-                #    # postprocessing for some data
-                #    if ($seqdata->{NAME} eq 'FEATURES') {
-                #        $self->_process_features($seqdata)
-                #    }
-                #
-                #    # using handlers directly, slightly faster
-                #    #my $method = (exists $handlers->{ $seqdata->{NAME} }) ?
-                #    #        ($handlers->{$seqdata->{NAME}}) :
-                #    #    (exists $handlers->{'_DEFAULT_'}) ?
-                #    #        ($handlers->{'_DEFAULT_'}) :
-                #    #    undef;
-                #    #($method) ? ($hobj->$method($seqdata) ) :
-                #    #        $self->debug("No handler defined for ",$seqdata->{NAME},"\n");
-                #
-                #    # using handler methods in the Handler object, more centralized
-                #    #$self->debug(Dumper($seqdata));
-                #    $hobj->data_handler($seqdata);
-                #
-                #    # bail here on //
-                #    last PARSER if $endrec;
-                #    # reset for next round
-                #    $seqdata = undef;
-                #}
+            when (index($line, '//') == 0) {
+                $self->{state}{MODE} = 'RECORD_END';
+                $self->{state}{DATA} = $line;
             }
-
-            # feature
             # sequence
+            when (m{^\s*\d+\s([\w\s]+)$}ox) {
+                $self->{state}{MODE} = 'SEQUENCE';
+                $self->{state}{DATA} = $1;
+            }
+            # annotation and feature key
+            when (m{^(\s{0,5})(\w+)\s+(.*)$}ox) {
+                $self->{state}{MODE} = length($1) < 5 ? 'ANNOTATION' : 'FEATURE';
+                ($key, $self->{state}{DATA}) = ($2, $3);
+            }
+            # feature tags
+            #when (m{^(\s{5,})(\w+)\s+(.*)$}ox) {
+            #    $self->{mode} = length($1) < 5 ? 'ANNOTATION' : 'FEATURE';
+            #    ($key, $self->{current_data}) = ($2, $3);
+            #}
+            # append to prior data
+            default {
+                $line =~ s/^\s+//;
+            }
+            # if there is prior data set, and we need to reset state, prep data
+            # and return
         }
     }
+    0;
     #    if ($ann && $ann eq 'ORIGIN') {
     #        SEQ:
     #        while (defined($line)) {
