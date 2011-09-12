@@ -156,5 +156,3 @@ sub gff3_convert {
 __END__
 
 MODES = FEATURE, SEQUENCE, COMMENT, DIRECTIVE
-
-

@@ -10,6 +10,8 @@ use Scalar::Util qw(blessed);
 use Carp ();
 use Module::Load;
 
+our $CACHE_SIZE = 1;
+
 # lifted from Bio::SeqIO for our own nefarious purposes
 sub new {
     my ($caller,@args) = @_;
@@ -184,10 +186,12 @@ SIMPLE DATA FORMAT
 
 # data relevant
 MODE = the data type being passed (as well as it can be defined)
-DATA = a data structure (generally a hash reference) containing the data chunk
-parsed
+DATA = the raw data string for this mode (minus any mode-relative information)
+META = a data structure (generally a hash reference) containing possibly
+relevant information.  Redundant combined with the data above, but easier to
+digest :)
 
-# for those interested in indexing a file for whatever reason:
+# for those interested in indexing a file for whatever reason (this is NYI):
 START = start of the data chunk in the data stream
 LENGTH = length of the data chunk
 
