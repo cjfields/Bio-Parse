@@ -134,7 +134,7 @@ my %test_data = (
         RECORD_END      => 2,
     },
     'test.gb'             => { # five records
-        ANNOTATION      => 89,  # TODO: check!
+        ANNOTATION      => 90,  # TODO: check!
         FEATURE         => 39,   # TODO: check!
         SEQUENCE        => 81,   # TODO: check!
         RECORD_END      => 5,
@@ -146,7 +146,7 @@ my %test_data = (
         RECORD_END      => 4,
     },
     'testfuzzy.gb'        => { # bad formatting example, may not be supported
-        ANNOTATION      => 21,
+        ANNOTATION      => 22,
         FEATURE         => 21,
         SEQUENCE        => 6,
         RECORD_END      => 1,

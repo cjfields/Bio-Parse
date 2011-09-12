@@ -41,6 +41,7 @@ sub new {
         if ($param{format} =~ /-/) {
             ($param{format}, $param{variant}) = split('-', $param{format}, 2);
         }
+
         Carp::croak "Unknown module Bio::Parse::$param{format}"
             unless( $class->_load_format_module($param{format}) );
         return "Bio::Parse::$param{format}"->new(%param);
@@ -49,6 +50,8 @@ sub new {
 
 sub _initialize {
     # noop, subclasses override as needed...
+    my ($self, %params) = @_;
+    
 }
 
 sub fh {
@@ -115,6 +118,54 @@ sub confess {
 sub method_not_implemented {
     my $self = shift;
     (caller(1))[3]." is not implemented by ".ref($self)
+}
+
+# a very simplistic API for working on, modifying, and switching out datasets
+# do not rely on until stable!
+
+sub new_dataset {
+    my ($self, $ds) = @_;
+
+    # append_mode, needs to be cleaned up
+    if (exists $self->{append_mode}->{$ds->{MODE}}) {
+        $self->append_data($ds->{DATA});
+        # TODO: what about META?
+    }
+    unshift @{$self->{datasets}}, $ds;
+}
+
+sub num_datasets {
+    scalar(@{shift->{datasets}});
+}
+
+sub current_dataset { shift->{datasets}[0]; }
+
+sub pop_dataset {
+    my $self = shift;
+    pop @{$self->{datasets}};
+}
+
+# TODO: append could be smarter and not add newlines, just sayin'
+sub append_data {
+    my ($self, @args) = @_;
+    if (@args == 2) {
+        $self->{datasets}[-1]{META}{$args[0]}[0] .= "\n$args[1]";
+    } else {
+        $self->{datasets}[-1]{DATA} .= "\n$args[0]";
+    }
+    1;
+}
+
+sub add_meta_data {
+    my ($self, $meta) = @_;
+    while (my ($key, $value) = each %$meta) {
+        push @{$self->{datasets}[0]{META}{$key}}, $value;
+    }
+}
+
+sub append_modes {
+    my $self = shift;
+    $self->{append_modes};
 }
 
 # lifted from Bio::SeqIO, but using Module::Load

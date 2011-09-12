@@ -27,7 +27,7 @@ sub next_dataset {
                     );
             }
             # annotation and feature key
-            when (m{^(\s{0,5})([\w'-]+)\s+(.*)$}ox) {
+            when (m{^(\s{0,5})([\w'-]+)\s*([^\n]*)$}ox) {
                 if (length($1) < 5) {
                     $self->new_dataset({
                             MODE    => 'ANNOTATION',
@@ -105,9 +105,9 @@ sub pop_dataset {
 sub append_data {
     my ($self, @args) = @_;
     if (@args == 2) {
-        $self->{datasets}[-1]{META}{$args[0]}[0] .= "\n$args[1]";
+        $self->{datasets}[0]{META}{$args[0]}[0] .= "\n$args[1]";
     } else {
-        $self->{datasets}[-1]{DATA} .= "\n$args[0]";
+        $self->{datasets}[0]{DATA} .= "\n$args[0]";
     }
     1;
 }
