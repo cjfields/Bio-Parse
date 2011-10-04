@@ -29,6 +29,7 @@ sub _initialize {
     $ATTRIBUTE_SPLIT = exists $args{attribute_split} ?
         qr/$args{attribute_split}/o :
         qr/=/o;
+    $self->fh();
 }
 
 sub next_dataset {
@@ -39,9 +40,9 @@ sub next_dataset {
     GFFLINE:
     while (my $line = <$fh>) {
         $len += CORE::length($line);
+        chomp $line;
         given ($line) {
             when (/(?:\t[^\t]+){8}/)  {
-                chomp $line;
                 $self->{mode} = $dataset->{MODE} = 'FEATURE';
                 my (%feat, %tags, $attstr);
                 # validate here?
@@ -57,32 +58,29 @@ sub next_dataset {
                     $tags{$key} = \@vals;
                 }
                 $feat{"${PREFIX}tag"} = \%tags;
-                $dataset->{DATA} = \%feat;
+                $dataset->{META} = \%feat;
             }
             when (/^\s*$/) {  next GFFLINE  } # blank lines
             when (/^(\#{1,2})\s*(\S+)\s*([^\n]+)?$/) { # comments and directives
                 if (length($1) == 1) {
-                    chomp $line;
                     # per GFF3 spec, this is a generic comment that can be
                     # ignored, nothing to use; higher-level parsers could
                     # probably do something with this, though so we pass it on
                     @{$dataset}{qw(MODE DATA)} = ('COMMENT', {DATA => $line});
                 } else {
                     $self->{mode} = 'DIRECTIVE';
-                    @{$dataset}{qw(MODE DATA)} =
+                    @{$dataset}{qw(MODE META)} =
                         ('DIRECTIVE', $self->directive($2, $3));
                 }
             }
             when (/^>(.*)$/) {          # sequence
-                chomp $line;
-                @{$dataset}{qw(MODE DATA)} =
+                @{$dataset}{qw(MODE META)} =
                     ('SEQUENCE', {'sequence-header' =>  $1});
                 $self->{mode} = 'SEQUENCE';
             }
             default {
                 if ($self->{mode} eq 'SEQUENCE') {
-                    chomp $line;
-                    @{$dataset}{qw(MODE DATA)} =
+                    @{$dataset}{qw(MODE META)} =
                         ('SEQUENCE', {sequence => $line});
                 } else {
                     # anything else should be sequence, but there should be some
@@ -94,7 +92,7 @@ sub next_dataset {
             }
         }
         if ($dataset) {
-            @$dataset{qw(START LENGTH)} = ($self->{stream_start}, $len);
+            @$dataset{qw(DATA START LENGTH)} = ($line, $self->{stream_start}, $len);
             $self->{stream_start} += $len;
             return $dataset;
         }
