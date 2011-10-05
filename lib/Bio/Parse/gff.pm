@@ -42,8 +42,16 @@ sub next_dataset {
         $len += CORE::length($line);
         chomp $line;
         given ($line) {
-            when (/(?:\t[^\t]+){8}/)  {
-                $self->{mode} = $dataset->{MODE} = 'FEATURE';
+#<<<<<<< Updated upstream
+#            when (/(?:\t[^\t]+){8}/)  {
+#                $self->{mode} = $dataset->{MODE} = 'FEATURE';
+#=======
+            when (/^\s*$/) {  next GFFLINE  } # blank lines
+            when (/(?:\t[^\t]+){8}/)  { # feature
+                chomp $line;
+                #$self->{mode} = $dataset->{MODE} = 'FEATURE';
+                $dataset->{MODE} = 'FEATURE';
+#>>>>>>> Stashed changes
                 my (%feat, %tags, $attstr);
                 # validate here?
                 (@feat{@GFF_COLUMNS}, $attstr) =
@@ -58,36 +66,58 @@ sub next_dataset {
                     $tags{$key} = \@vals;
                 }
                 $feat{"${PREFIX}tag"} = \%tags;
-                $dataset->{META} = \%feat;
+#<<<<<<< Updated upstream
+#                $dataset->{META} = \%feat;
+#=======
+                @{$dataset}{qw(META DATA)} = (\%feat, $line);
+                $self->new_dataset($dataset);
+#>>>>>>> Stashed changes
             }
-            when (/^\s*$/) {  next GFFLINE  } # blank lines
             when (/^(\#{1,2})\s*(\S+)\s*([^\n]+)?$/) { # comments and directives
                 if (length($1) == 1) {
                     # per GFF3 spec, this is a generic comment that can be
                     # ignored, nothing to use; higher-level parsers could
                     # probably do something with this, though so we pass it on
-                    @{$dataset}{qw(MODE DATA)} = ('COMMENT', {DATA => $line});
+                    @{$dataset}{qw(MODE DATA META)} = ('COMMENT', $line, {comment => $line});
                 } else {
                     $self->{mode} = 'DIRECTIVE';
-                    @{$dataset}{qw(MODE META)} =
-                        ('DIRECTIVE', $self->directive($2, $3));
+#<<<<<<< Updated upstream
+#                    @{$dataset}{qw(MODE META)} =
+#                        ('DIRECTIVE', $self->directive($2, $3));
+#=======
+                    @{$dataset}{qw(MODE DATA META)} =
+                        ('DIRECTIVE', $line, $self->directive($2, $3));
+#>>>>>>> Stashed changes
                 }
+                $self->new_dataset($dataset);
             }
             when (/^>(.*)$/) {          # sequence
-                @{$dataset}{qw(MODE META)} =
-                    ('SEQUENCE', {'sequence-header' =>  $1});
-                $self->{mode} = 'SEQUENCE';
+#<<<<<<< Updated upstream
+#                @{$dataset}{qw(MODE META)} =
+#                    ('SEQUENCE', {'sequence-header' =>  $1});
+#                $self->{mode} = 'SEQUENCE';
+#            }
+#            default {
+#                if ($self->{mode} eq 'SEQUENCE') {
+#                    @{$dataset}{qw(MODE META)} =
+#                        ('SEQUENCE', {sequence => $line});
+#=======
+                chomp $line;
+                @{$dataset}{qw(MODE DATA META)} =
+                    ('SEQUENCE', $line, {'sequence-header' =>  $1});
             }
             default {
-                if ($self->{mode} eq 'SEQUENCE') {
-                    @{$dataset}{qw(MODE META)} =
-                        ('SEQUENCE', {sequence => $line});
+                if ($self->current_mode eq 'SEQUENCE') {
+                    chomp $line;
+                    @{$dataset}{qw(MODE DATA)} =
+                        ('SEQUENCE', $line);
+#>>>>>>> Stashed changes
                 } else {
                     # anything else should be sequence, but there should be some
                     # kind of directive to change the mode or a typical FASTA
                     # header should be found; if not, die
                     $self->throw("Unknown line: $line, parser was in mode ".
-                                 $self->{mode});
+                                 $self->current_mode);
                 }
             }
         }
@@ -96,6 +126,11 @@ sub next_dataset {
             $self->{stream_start} += $len;
             return $dataset;
         }
+        #if ($dataset) {
+        #    @$dataset{qw(START LENGTH)} = ($self->{stream_start}, $len);
+        #    $self->{stream_start} += $len;
+        #    return $dataset;
+        #}
         return;
     }
 }

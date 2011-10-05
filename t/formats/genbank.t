@@ -120,7 +120,7 @@ my %test_data = (
         RECORD_END      => 1,
     },
 
-    # TODO: Ensembl output, may need to be updated to more recent example
+    # TODO: Ensembl output, prob. should be updated to more recent example
     'revcomp_mrna.gb'     => {
         ANNOTATION      => 13,
         FEATURE         => 159,
@@ -163,6 +163,7 @@ for my $file (sort keys %test_data) {
         push @{$data{$ds->{MODE}}}, $ds;
     }
     for my $type (sort keys %$expected) {
+        next if $type eq 'SAMPLE';
         is(@{$data{$type}}, $expected->{$type}, "$file $type");
     }
 }

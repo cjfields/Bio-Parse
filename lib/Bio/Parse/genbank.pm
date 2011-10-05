@@ -16,15 +16,23 @@ sub next_dataset {
     while (defined(my $line = <$fh>)) {
         next if $line =~ m{^\s*$};
         chomp $line;
+        # There is a better way to do this, since we know order we could check
+        # for each section, optimize it later...
+
         given ($line) {
             # sequence
-            when (m{^\s*\d+\s([\w\s]+)$}ox) {
+            when (m{^\s{0,10}\d+\s([\w\s]+)$}ox) {
                 my $seq = $1;
                 $seq =~ s/\s+//g;
-                $self->new_dataset(
-                    {MODE    => 'SEQUENCE',
-                     DATA   => $seq}
+                if ($self->current_mode eq 'SEQUENCE') {
+                    $self->append_data($seq);
+                    next PARSER;
+                } else {
+                    $self->new_dataset(
+                        {MODE    => 'SEQUENCE',
+                         DATA   => $seq}
                     );
+                }
             }
             # annotation and feature key
             when (m{^(\s{0,5})([\w'-]+)\s*([^\n]*)$}ox) {
@@ -60,15 +68,17 @@ sub next_dataset {
             }
             default {
                 s/^\s+//;
-                if ($self->current_dataset->{MODE} eq 'FEATURE') {
+                if ($self->current_mode eq 'FEATURE') {
                     if (m{^/([^=]+)=?(.+)?}) {
                         $self->add_meta_data({$1 => $2});
                         $self->{_current_ft_label} = $1;
                     } else {
                         $self->append_data($self->{_current_ft_label}, $_);
+                        next PARSER;
                     }
                 } else {
                     $self->append_data($_);
+                    next PARSER;
                 }
             }
         }
@@ -80,43 +90,6 @@ sub next_dataset {
         return $self->pop_dataset();
     }
     return;
-}
-
-# a very simplistic API for working on, modifying, and switching out datasets
-# do not rely on until stable!
-
-sub new_dataset {
-    my ($self, $ds) = @_;
-    unshift @{$self->{datasets}}, $ds;
-}
-
-sub num_datasets {
-    scalar(@{shift->{datasets}});
-}
-
-sub current_dataset { shift->{datasets}[0]; }
-
-sub pop_dataset {
-    my $self = shift;
-    pop @{$self->{datasets}};
-}
-
-# TODO: append could be smarter and not add newlines, just sayin'
-sub append_data {
-    my ($self, @args) = @_;
-    if (@args == 2) {
-        $self->{datasets}[0]{META}{$args[0]}[0] .= "\n$args[1]";
-    } else {
-        $self->{datasets}[0]{DATA} .= "\n$args[0]";
-    }
-    1;
-}
-
-sub add_meta_data {
-    my ($self, $meta) = @_;
-    while (my ($key, $value) = each %$meta) {
-        push @{$self->{datasets}[0]{META}{$key}}, $value;
-    }
 }
 
 1;
