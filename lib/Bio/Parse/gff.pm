@@ -3,6 +3,7 @@ package Bio::Parse::gff;
 use 5.010;
 use strict;
 use warnings;
+use Any::URI::Escape;
 use base 'Bio::Parse';
 
 # cached values
@@ -10,12 +11,12 @@ my $PREFIX; # to make bioperl-like args for instances, make this '-'
 my $ATTRIBUTE_SPLIT; # GFF3 = "\t", GFF2 = ' ' TODO: needs validation per type
 
 # TODO : implement URI encode/decode (switch to URI::Encode)
-my $URI_ENCODE = ';=%&,\t\n\r\x00-\x1f';
+#my $URI_ENCODE = ';=%&,\t\n\r\x00-\x1f';
 
 my $GFF_SPLIT;   # TODO : allow spaces instead of tabs? seems dangerous...
 
 # TODO : implement GTF/GFF2-specific att parsing
-my $ATTRIBUTE_CONVERT = \&gff3_convert;
+my $ATTRIBUTE_CONVERT = \&uri_unescape;
 my @GFF_COLUMNS;
 
 sub _initialize {
@@ -42,16 +43,8 @@ sub next_dataset {
         $len += CORE::length($line);
         chomp $line;
         given ($line) {
-#<<<<<<< Updated upstream
-#            when (/(?:\t[^\t]+){8}/)  {
-#                $self->{mode} = $dataset->{MODE} = 'FEATURE';
-#=======
-            when (/^\s*$/) {  next GFFLINE  } # blank lines
-            when (/(?:\t[^\t]+){8}/)  { # feature
-                chomp $line;
-                #$self->{mode} = $dataset->{MODE} = 'FEATURE';
-                $dataset->{MODE} = 'FEATURE';
-#>>>>>>> Stashed changes
+            when (/(?:\t[^\t]+){8}/)  {
+                $self->{mode} = $dataset->{MODE} = 'FEATURE';
                 my (%feat, %tags, $attstr);
                 # validate here?
                 (@feat{@GFF_COLUMNS}, $attstr) =
@@ -66,12 +59,7 @@ sub next_dataset {
                     $tags{$key} = \@vals;
                 }
                 $feat{"${PREFIX}tag"} = \%tags;
-#<<<<<<< Updated upstream
-#                $dataset->{META} = \%feat;
-#=======
-                @{$dataset}{qw(META DATA)} = (\%feat, $line);
-                $self->new_dataset($dataset);
-#>>>>>>> Stashed changes
+                $dataset->{META} = \%feat;
             }
             when (/^(\#{1,2})\s*(\S+)\s*([^\n]+)?$/) { # comments and directives
                 if (length($1) == 1) {
@@ -81,27 +69,12 @@ sub next_dataset {
                     @{$dataset}{qw(MODE DATA META)} = ('COMMENT', $line, {comment => $line});
                 } else {
                     $self->{mode} = 'DIRECTIVE';
-#<<<<<<< Updated upstream
-#                    @{$dataset}{qw(MODE META)} =
-#                        ('DIRECTIVE', $self->directive($2, $3));
-#=======
-                    @{$dataset}{qw(MODE DATA META)} =
-                        ('DIRECTIVE', $line, $self->directive($2, $3));
-#>>>>>>> Stashed changes
+                    @{$dataset}{qw(MODE META)} =
+                        ('DIRECTIVE', $self->directive($2, $3));
                 }
                 $self->new_dataset($dataset);
             }
             when (/^>(.*)$/) {          # sequence
-#<<<<<<< Updated upstream
-#                @{$dataset}{qw(MODE META)} =
-#                    ('SEQUENCE', {'sequence-header' =>  $1});
-#                $self->{mode} = 'SEQUENCE';
-#            }
-#            default {
-#                if ($self->{mode} eq 'SEQUENCE') {
-#                    @{$dataset}{qw(MODE META)} =
-#                        ('SEQUENCE', {sequence => $line});
-#=======
                 chomp $line;
                 @{$dataset}{qw(MODE DATA META)} =
                     ('SEQUENCE', $line, {'sequence-header' =>  $1});
@@ -111,7 +84,6 @@ sub next_dataset {
                     chomp $line;
                     @{$dataset}{qw(MODE DATA)} =
                         ('SEQUENCE', $line);
-#>>>>>>> Stashed changes
                 } else {
                     # anything else should be sequence, but there should be some
                     # kind of directive to change the mode or a typical FASTA
@@ -126,11 +98,6 @@ sub next_dataset {
             $self->{stream_start} += $len;
             return $dataset;
         }
-        #if ($dataset) {
-        #    @$dataset{qw(START LENGTH)} = ($self->{stream_start}, $len);
-        #    $self->{stream_start} += $len;
-        #    return $dataset;
-        #}
         return;
     }
 }
@@ -160,11 +127,11 @@ sub directive {
     \%data;
 }
 
-sub gff3_convert {
-    my $val = $_[0];
-    $val =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/ego;
-    $val;
-}
+#sub gff3_convert {
+#    my $val = $_[0];
+#    $val =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/ego;
+#    $val;
+#}
 
 #sub gff2_parse_attributes {
 #    my ( $attr_string ) = @_;
