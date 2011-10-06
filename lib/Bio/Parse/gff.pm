@@ -5,13 +5,11 @@ use strict;
 use warnings;
 use Any::URI::Escape;
 use base 'Bio::Parse';
+use Bio::Parse::DataSet;
 
 # cached values
 my $PREFIX; # to make bioperl-like args for instances, make this '-'
 my $ATTRIBUTE_SPLIT; # GFF3 = "\t", GFF2 = ' ' TODO: needs validation per type
-
-# TODO : implement URI encode/decode (switch to URI::Encode)
-#my $URI_ENCODE = ';=%&,\t\n\r\x00-\x1f';
 
 my $GFF_SPLIT;   # TODO : allow spaces instead of tabs? seems dangerous...
 
@@ -56,7 +54,7 @@ sub next_dataset {
                                  "make sure attribute_split is set correctly ".
                                  "(currently $ATTRIBUTE_SPLIT)") if !defined($rest);
                     my @vals = map { $ATTRIBUTE_CONVERT->($_) } split(',',$rest);
-                    $tags{$key} = \@vals;
+                    push @{$tags{$key}}, @vals;
                 }
                 $feat{"${PREFIX}tag"} = \%tags;
                 $dataset->{META} = \%feat;
@@ -96,7 +94,7 @@ sub next_dataset {
         if ($dataset) {
             @$dataset{qw(DATA START LENGTH)} = ($line, $self->{stream_start}, $len);
             $self->{stream_start} += $len;
-            return $dataset;
+            $self->{instance} ? return Bio::Parse::Dataset->new($dataset) : return $dataset;
         }
         return;
     }

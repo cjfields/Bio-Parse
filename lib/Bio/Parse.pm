@@ -50,8 +50,6 @@ sub new {
 
 sub _initialize {
     # noop, subclasses override as needed...
-    my ($self, %params) = @_;
-    
 }
 
 sub fh {
@@ -79,6 +77,11 @@ sub format {
 sub variant {
     my $self = shift;
     $self->{variant};
+}
+
+sub create_instance {
+    my $self = shift;
+    $self->{instance};
 }
 
 # for keys that may be passed on as parameters down the way
@@ -125,12 +128,6 @@ sub method_not_implemented {
 
 sub new_dataset {
     my ($self, $ds) = @_;
-
-    # append_mode, needs to be cleaned up
-    if (exists $self->{append_mode}->{$ds->{MODE}}) {
-        $self->append_data($ds->{DATA});
-        # TODO: what about META?
-    }
     unshift @{$self->{datasets}}, $ds;
 }
 
@@ -139,6 +136,8 @@ sub num_datasets {
 }
 
 sub current_dataset { shift->{datasets}[0]; }
+
+sub current_mode { shift->{datasets}[0]{MODE}; }
 
 sub pop_dataset {
     my $self = shift;
@@ -149,9 +148,9 @@ sub pop_dataset {
 sub append_data {
     my ($self, @args) = @_;
     if (@args == 2) {
-        $self->{datasets}[-1]{META}{$args[0]}[0] .= "\n$args[1]";
+        $self->{datasets}[0]{META}{$args[0]}[0] .= "\n$args[1]";
     } else {
-        $self->{datasets}[-1]{DATA} .= "\n$args[0]";
+        $self->{datasets}[0]{DATA} .= "\n$args[0]";
     }
     1;
 }
@@ -163,10 +162,10 @@ sub add_meta_data {
     }
 }
 
-sub append_modes {
-    my $self = shift;
-    $self->{append_modes};
-}
+#sub append_modes {
+#    my $self = shift;
+#    $self->{append_modes};
+#}
 
 # lifted from Bio::SeqIO, but using Module::Load
 sub _load_format_module {
