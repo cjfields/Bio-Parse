@@ -7,7 +7,18 @@ use base 'Bio::Parse';
 use Bio::Parse::DataSet;
 use Any::URI::Escape;
 
-# cached values
+#my %META_MAP = (
+#    'primary_tag'   => '-primary_tag',
+#    'seq_id'        => '-seq_id',
+#    'source'        => '-source',
+#    'start'         => '-start',
+#    'end'           => '-end',
+#    'score'         => '-score',
+#    'strand'        => '-strand',
+#    'phase'         => '-phase',
+#    'tags'          => '-tags'
+#);
+
 my $ATTRIBUTE_SPLIT; # GFF3 = "\t", GFF2 = ' ' TODO: needs validation per type
 
 my $GFF_SPLIT;   # TODO : allow spaces instead of tabs? seems dangerous...
@@ -16,6 +27,7 @@ my $GFF_SPLIT;   # TODO : allow spaces instead of tabs? seems dangerous...
 my $ATTRIBUTE_CONVERT = \&uri_unescape;
 my @GFF_COLUMNS;
 
+# TODO: genericize?  Push what we can to Bio::Parse (base)
 sub _initialize {
     my ($self, %args) = @_;
     # cache locally for speed
@@ -26,11 +38,13 @@ sub _initialize {
         qr/$args{attribute_split}/o :
         qr/=/o;
     $self->fh();
+    #$self->{meta_map} = \%META_MAP;
 }
 
 sub next_dataset {
     my $self = shift;
-    my $fh = $self->{fh};
+    my $fh = $self->fh;
+    #my $meta_map = $self->meta_map;
     my $dataset;
     my $len = 0;
 
@@ -42,21 +56,26 @@ sub next_dataset {
         $len += CORE::length($line);
         chomp $line;
         given ($line) {
+            # TODO: note this regex hard-codes "\t"
             when (/(?:\t[^\t]+){8}/)  {
                 $self->{mode} = $dataset->{MODE} = 'FEATURE';
                 my (%feat, %tags, $attstr);
-                # validate here?
+
+                # TODO: hard-coded "\t"
+                #(@feat{@{$meta_map}{@GFF_COLUMNS}}, $attstr) =
                 (@feat{@GFF_COLUMNS}, $attstr) =
                     map {$_ ne '.' ? $_ : undef } split("\t",$line);
 
                 for my $kv (split(/\s*;\s*/, $attstr)) {
                     my ($key, $rest) = split($ATTRIBUTE_SPLIT, $kv, 2);
-                    $self->throw("Attributes not split correctly:\n$kv\n".
-                                 "make sure attribute_split is set correctly ".
-                                 "(currently $ATTRIBUTE_SPLIT)") if !defined($rest);
+                    # TODO: not sure this check is valid, commenting out
+                    #$self->throw("Attributes not split correctly:\n$kv\n".
+                    #             "make sure attribute_split is set correctly ".
+                    #             "(currently $ATTRIBUTE_SPLIT)") if !defined($rest);
                     my @vals = map { $ATTRIBUTE_CONVERT->($_) } split(',',$rest);
-                    push @{$tags{$key}}, @vals;
+                    push @{$tags{$key}},@vals;
                 }
+                #$feat{$meta_map->{TAG}} = \%tags;
                 $feat{TAG} = \%tags;
                 $dataset->{META} = \%feat;
             }
@@ -71,7 +90,6 @@ sub next_dataset {
                     @{$dataset}{qw(MODE META)} =
                         ('DIRECTIVE', $self->directive($2, $3));
                 }
-                $self->new_dataset($dataset);
             }
             when (/^>(.*)$/) {          # sequence
                 chomp $line;
@@ -105,50 +123,27 @@ sub directive {
     my ($self, $directive, $rest) = @_;
     $rest ||= '';
     my %data;
+    # TODO: allow mapping
     given ($directive) {
         when ('sequence-region') {
-            @data{qw(type id start end)} =
+            @data{qw(directive id start end)} =
                 ('sequence-region', split(/\s+/, $rest));
         }
         when ('genome-build') {
-            @data{qw(type source buildname)} = ($directive, split(/\s+/, $rest));
+            @data{qw(directive source buildname)} = ($directive, split(/\s+/, $rest));
         }
         when ('#') {
-            $data{type} = 'resolve-references';
+            $data{directive} = 'resolve-references';
         }
         when ('FASTA') {
-            $data{type} = 'sequence';
+            $data{directive} = 'sequence';
         }
         default {
-            @data{qw(type data)} = ($directive, $rest);
+            @data{qw(directive data)} = ($directive, $rest);
         }
     }
     \%data;
 }
-
-#sub gff3_convert {
-#    my $val = $_[0];
-#    $val =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/ego;
-#    $val;
-#}
-
-#sub gff2_parse_attributes {
-#    my ( $attr_string ) = @_;
-#
-#    return {} if !defined $attr_string || $attr_string eq '.';
-#
-#    chomp $attr_string;
-#
-#    my %attrs;
-#    for my $a ( split /;/, $attr_string ) {
-#        next unless $a;
-#        my ( $name, $values ) = split /\s/, $a, 2;
-#        next unless defined $values;
-#        # not unescaping here!
-#        push @{$attrs{$name}}, split /,/, $values;
-#    }
-#    return \%attrs;
-#}
 
 1;
 

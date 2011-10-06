@@ -79,6 +79,11 @@ sub variant {
     $self->{variant};
 }
 
+sub meta_map {
+    my $self = shift;
+    $self->{meta_map};
+}
+
 sub create_instance {
     my $self = shift;
     $self->{instance};
