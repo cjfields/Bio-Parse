@@ -3,12 +3,11 @@ package Bio::Parse::gff;
 use 5.010;
 use strict;
 use warnings;
-use Any::URI::Escape;
 use base 'Bio::Parse';
 use Bio::Parse::DataSet;
+use Any::URI::Escape;
 
 # cached values
-my $PREFIX; # to make bioperl-like args for instances, make this '-'
 my $ATTRIBUTE_SPLIT; # GFF3 = "\t", GFF2 = ' ' TODO: needs validation per type
 
 my $GFF_SPLIT;   # TODO : allow spaces instead of tabs? seems dangerous...
@@ -21,10 +20,8 @@ sub _initialize {
     my ($self, %args) = @_;
     # cache locally for speed
     $self->SUPER::_initialize(%args);
-    $PREFIX = $self->prefix;
     # features
-    @GFF_COLUMNS = map {"$PREFIX$_"} qw(seq_id source primary_tag start end
-                       score strand phase);
+    @GFF_COLUMNS = qw(SEQ_ID SOURCE PRIMARY_TAG START END SCORE STRAND PHASE);
     $ATTRIBUTE_SPLIT = exists $args{attribute_split} ?
         qr/$args{attribute_split}/o :
         qr/=/o;
@@ -36,6 +33,10 @@ sub next_dataset {
     my $fh = $self->{fh};
     my $dataset;
     my $len = 0;
+
+    # TODO: this parser doesn't use the Bio::Parse helper methods for building
+    # data structures b/c each line is a single item of information. This may
+    # change for consistency, but have to see what the perf. hit is
     GFFLINE:
     while (my $line = <$fh>) {
         $len += CORE::length($line);
@@ -56,7 +57,7 @@ sub next_dataset {
                     my @vals = map { $ATTRIBUTE_CONVERT->($_) } split(',',$rest);
                     push @{$tags{$key}}, @vals;
                 }
-                $feat{"${PREFIX}tag"} = \%tags;
+                $feat{TAG} = \%tags;
                 $dataset->{META} = \%feat;
             }
             when (/^(\#{1,2})\s*(\S+)\s*([^\n]+)?$/) { # comments and directives
@@ -64,7 +65,7 @@ sub next_dataset {
                     # per GFF3 spec, this is a generic comment that can be
                     # ignored, nothing to use; higher-level parsers could
                     # probably do something with this, though so we pass it on
-                    @{$dataset}{qw(MODE DATA META)} = ('COMMENT', $line, {comment => $line});
+                    @{$dataset}{qw(MODE DATA META)} = ('COMMENT', $line, {COMMENT => $line});
                 } else {
                     $self->{mode} = 'DIRECTIVE';
                     @{$dataset}{qw(MODE META)} =
@@ -75,7 +76,7 @@ sub next_dataset {
             when (/^>(.*)$/) {          # sequence
                 chomp $line;
                 @{$dataset}{qw(MODE DATA META)} =
-                    ('SEQUENCE', $line, {'sequence-header' =>  $1});
+                    ('SEQUENCE', $line, {'FASTA-HEADER' =>  $1});
             }
             default {
                 if ($self->current_mode eq 'SEQUENCE') {

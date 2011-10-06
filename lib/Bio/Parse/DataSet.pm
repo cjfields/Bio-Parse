@@ -3,6 +3,8 @@ package Bio::Parse::Dataset;
 use Modern::Perl;
 use Carp;
 
+# TODO: allow write interface
+
 sub new {
     my ($class, $ds) = @_;
     $class = ref($class) ? ref($class) : $class;
@@ -11,8 +13,8 @@ sub new {
 }
 
 sub start { $_[0]->{START} }
-
 sub length { $_[0]->{LENGTH} }
+sub data { $_[0]->{DATA} }
 
 sub meta_names {
     my $self = shift;
@@ -25,21 +27,19 @@ sub meta {
     $self->{META} if exists $self->{META};
 }
 
-sub data { $_[0]->{DATA} }
-
 sub tag_names {
-    return keys(%{$_[0]->{META}{tag}}) if exists $_[0]->{META}{tag};
+    return keys(%{$_[0]->{META}{TAG}}) if exists $_[0]->{META}{TAG};
 }
 
 sub tags {
     my ($self, $tag_name) = @_;
-    return @{$self->{META}{tag}{$tag_name}} if exists $self->{META}{tag}{$tag_name};
-    return $self->{META}{tag} if exists $self->{META}{tag};
+    return @{$self->{META}{TAG}{$tag_name}} if exists $self->{META}{TAG}{$tag_name};
+    return $self->{META}{TAG} if exists $self->{META}{TAG};
 }
 
 sub tag {
     my ($self, $tag_name) = @_;
-    return $self->{META}{tag}{$tag_name}[0] if exists $self->{META}{tag}{$tag_name};
+    return $self->{META}{TAG}{$tag_name}[0] if exists $self->{META}{TAG}{$tag_name};
 }
 
 1;

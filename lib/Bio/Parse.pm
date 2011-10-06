@@ -84,13 +84,6 @@ sub create_instance {
     $self->{instance};
 }
 
-# for keys that may be passed on as parameters down the way
-# default: ''
-sub prefix {
-    my $self = shift;
-    $self->{prefix} || '';
-}
-
 # grab next chunk of data from fh (implement in actual parser!)
 sub next_dataset {...}
 
