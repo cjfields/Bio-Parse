@@ -24,15 +24,15 @@ sub next_dataset {
             when (m{^\s{0,10}\d+\s([\w\s]+)$}ox) {
                 my $seq = $1;
                 $seq =~ s/\s+//g;
-                if ($self->current_mode eq 'SEQUENCE') {
-                    $self->append_data($seq);
-                    next PARSER;
-                } else {
+                #if ($self->current_mode eq 'SEQUENCE') {
+                #    $self->append_data($seq);
+                #    next PARSER;
+                #} else {
                     $self->new_dataset(
                         {MODE    => 'SEQUENCE',
                          DATA   => $seq}
                     );
-                }
+                #}
             }
             # annotation and feature key
             when (m{^(\s{0,5})([\w'-]+)\s*([^\n]*)$}ox) {
