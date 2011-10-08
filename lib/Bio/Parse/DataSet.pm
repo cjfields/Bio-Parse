@@ -1,4 +1,4 @@
-package Bio::Parse::Dataset;
+package Bio::Parse::DataSet;
 
 use Modern::Perl;
 use Carp;

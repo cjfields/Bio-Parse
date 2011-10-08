@@ -7,10 +7,10 @@ my $parser;
 throws_ok {$parser = Bio::Parse->new()}
     qr/'fh' parameter not provided/, 'fails with no fh, format';
 
-throws_ok {$parser = Bio::Parse->new(format => 'gff')}
+throws_ok {$parser = Bio::Parse->new(format => 'gff2')}
     qr/'fh' parameter not provided/, 'fails with no fh';
 
-throws_ok {$parser = Bio::Parse->new(format => 'gff',
+throws_ok {$parser = Bio::Parse->new(format => 'gff2',
                                        fh     => 'foo')}
     qr/'fh' parameter not provided/, 'fails with bad fh';
 
@@ -19,7 +19,7 @@ my $str = 'foobarbaz';
 # test using fh based on string
 open(my $fh, '<', \$str) || die $!;
 
-lives_ok {$parser = Bio::Parse->new(format => 'gff',
+lives_ok {$parser = Bio::Parse->new(format => 'gff2',
                                     fh     => $fh)};
 
 isa_ok($parser, 'Bio::Parse');
@@ -27,7 +27,7 @@ isa_ok($parser, 'Bio::Parse::gff');
 is($parser->format, 'gff');
 is($parser->variant, undef);
 
-lives_ok {$parser = Bio::Parse->new(format => 'gff-v3',
+lives_ok {$parser = Bio::Parse->new(format => 'gff2-v3',
                                     fh     => $fh)};
 isa_ok($parser, 'Bio::Parse::gff');
 is($parser->format, 'gff');
@@ -40,7 +40,7 @@ close $fh;
         my $self = shift;
         $self->method_not_implemented;
     }
-    lives_ok {$parser = Bio::Parse->new(format => 'gff',
+    lives_ok {$parser = Bio::Parse->new(format => 'gff2',
                                     fh     => $fh)};
 
     is($parser->foo, 'Bio::Parse::gff::foo is not implemented by Bio::Parse::gff');

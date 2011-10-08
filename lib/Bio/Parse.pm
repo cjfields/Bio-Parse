@@ -6,9 +6,10 @@ use 5.012; # get nice 5.12 features like yada, may revert to 5.10 at some point
 use strict;
 use warnings;
 use IO::Unread;  # pushback buffering, stack-based
+use Bio::Parse::DataSet;
 use Scalar::Util qw(blessed);
 use Carp ();
-use Module::Load;
+use Class::Load;
 
 our $CACHE_SIZE = 1;
 
@@ -16,13 +17,13 @@ our $CACHE_SIZE = 1;
 sub new {
     my ($caller,@args) = @_;
     my $class = ref($caller) || $caller;
-    if( $class =~ /Bio::Parse::(\S+)/ ) {
+    if( $class =~ /Bio::Parse::\S+/ ) {
         my ($self) = bless {@args}, $class;
         $self->_initialize(@args);
         return $self;
     } else {
         my %param = @args;
-        @param{ map { s/-//; lc } keys %param } = values %param;
+        @param{ map { s/^-//; lc } keys %param } = values %param;
         my $fh = $param{fh};
         # required params
         unless ( $param{file} ||
@@ -42,9 +43,9 @@ sub new {
             ($param{format}, $param{variant}) = split('-', $param{format}, 2);
         }
 
-        Carp::croak "Unknown module Bio::Parse::$param{format}"
-            unless( $class->_load_format_module($param{format}) );
-        return "Bio::Parse::$param{format}"->new(%param);
+        my $module = "Bio::Parse::$param{format}";
+        $class->_load_format_module($module);
+        return $module->new(%param);
     }
 }
 
@@ -84,13 +85,15 @@ sub meta_map {
     $self->{meta_map};
 }
 
-sub create_instance {
-    my $self = shift;
-    $self->{instance};
-}
-
 # grab next chunk of data from fh (implement in actual parser!)
 sub next_dataset {...}
+
+# method to wrap data structure in a queryable object
+sub next_instance {
+    my $self = shift;
+    my $ds = $self->next_dataset;
+    defined $ds ? return Bio::Parse::DataSet->new($ds) : return;
+}
 
 # utility methods for parsers
 
@@ -100,7 +103,7 @@ sub pushback {
     unread $self->fh, $value if defined($value);
 }
 
-# simple base exceptions
+# simple base exceptions, just uses Carp
 sub throw {
     my $self = shift;
     Carp::croak shift;
@@ -122,7 +125,7 @@ sub method_not_implemented {
 }
 
 # a very simplistic API for working on, modifying, and switching out datasets
-# do not rely on until stable!
+# do not rely on until stable!  Not required of base modules...
 
 sub new_dataset {
     my ($self, $ds) = @_;
@@ -160,31 +163,20 @@ sub add_meta_data {
     }
 }
 
-#sub append_modes {
-#    my $self = shift;
-#    $self->{append_modes};
-#}
-
 # lifted from Bio::SeqIO, but using Module::Load
 sub _load_format_module {
-    my ($self, $format) = @_;
-    my $module = "Bio::Parse::" . $format;
-    my $ok;
+    my ($ci, $module) = @_;
 
-    eval {
-        load $module;
-        1;
-    };
+    eval { Class::Load::load_class($module); 1 } ;
     if ( $@ ) {
-        confess <<END;
-$self: $format cannot be found
+        $ci->throw(<<END);
+$ci: $module cannot be found
 Exception $@
 For more information about the Bio::Parse system please see the Bio::Parse docs.
 END
         ;
-    } else {
-        1
     }
+    1;
 }
 
 1;

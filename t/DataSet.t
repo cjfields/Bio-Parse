@@ -46,7 +46,7 @@ my $ds = {
   'MODE' => 'FEATURE'
 };
 
-ok(my $instance = Bio::Parse::Dataset->new($ds));
+ok(my $instance = Bio::Parse::DataSet->new($ds));
 
 my @names = sort($instance->meta_names);
 
