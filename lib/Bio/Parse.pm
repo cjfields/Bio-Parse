@@ -81,13 +81,16 @@ sub variant {
     $self->{variant};
 }
 
+# TODO: NYI
 sub meta_map {
     my $self = shift;
     $self->{meta_map};
 }
 
 # grab next chunk of data from fh (implement in actual parser!)
-sub next_hr {...}
+sub next_hr {
+    $_[0]->method_not_implemented();
+}
 
 # method to wrap data structure in a queryable object
 sub next_dataset {

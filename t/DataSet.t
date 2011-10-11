@@ -42,8 +42,8 @@ my $ds = {
                            'hypothetical protein LOC551646'
                          ]
                  },
-  'DATA' => 'Group1	RefSeq	exon	342466	342784	.	+	.	ID=XM_625257.3;Parent=Group1:LOC551646;gbkey=mRNA;product=hypothetical protein LOC551646;note=Derived by automated computational analysis using gene prediction method: GNOMON. Supporting evidence includes similarity to: 224 ESTs;insd_transcript_id=XM_625257.3;db_xref=GI:328776014;db_xref=GeneID:551646;db_xref=BEEBASE:GB10320;exon_number=5',
-  'MODE' => 'FEATURE'
+    'DATA' => 'Group1	RefSeq	exon	342466	342784	.	+	.	ID=XM_625257.3;Parent=Group1:LOC551646;gbkey=mRNA;product=hypothetical protein LOC551646;note=Derived by automated computational analysis using gene prediction method: GNOMON. Supporting evidence includes similarity to: 224 ESTs;insd_transcript_id=XM_625257.3;db_xref=GI:328776014;db_xref=GeneID:551646;db_xref=BEEBASE:GB10320;exon_number=5',
+    'MODE' => 'FEATURE'
 };
 
 ok(my $instance = Bio::Parse::DataSet->new($ds));

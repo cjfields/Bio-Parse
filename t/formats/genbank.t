@@ -165,6 +165,8 @@ for my $file (sort keys %test_data) {
     for my $type (sort keys %$expected) {
         next if $type eq 'SAMPLE';
         is(@{$data{$type}}, $expected->{$type}, "$file $type");
+        # TODO: need deeper testing of data here
+
     }
 }
 

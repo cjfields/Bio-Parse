@@ -9,6 +9,12 @@ use Data::Dumper;
 # may hard-code this, uncertain yet...
 $Bio::Parse::CACHE_SIZE = 2;
 
+my %MODE_MAP = (
+    'SEQUENCE'  => \&_gb_sequence,
+    'FEATURE'   => \&_gb_feature,
+    'ANNOTATION'    => \&_gb_annotation
+);
+
 sub next_hr {
     my $self = shift;
     my $fh = $self->fh;
