@@ -96,4 +96,3 @@ sub next_dataset {
 
 __END__
 
-MODES = ANNOTATION, FEATURE, SEQUENCE

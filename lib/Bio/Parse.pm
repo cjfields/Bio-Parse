@@ -124,8 +124,14 @@ sub method_not_implemented {
     (caller(1))[3]." is not implemented by ".ref($self)
 }
 
+<<<<<<< Updated upstream
 # a very simplistic API for working on, modifying, and switching out datasets
 # do not rely on until stable!  Not required of base modules...
+=======
+# A very simplistic API for working on, modifying, and switching out datasets.
+# This may switch to a stack-based method to deal with more complex formats. Do
+# not rely on until stable!
+>>>>>>> Stashed changes
 
 sub new_dataset {
     my ($self, $ds) = @_;
@@ -182,6 +188,271 @@ END
 1;
 
 __END__
+
+=head1 NAME
+
+Bio::Parse - Generic parsing of common bioinformatics formats.
+
+=head1 VERSION
+
+This documentation refers to Bio::Parse version 0.01.
+
+=head1 SYNOPSIS
+
+   use Bio::Parse;
+   my $in = Bio::Parse->new(format  => 'genbank', file  => $file);
+
+   # retrieve low-level hash reference-based data from input stream
+   while (my $hr = $in->next_hr) {
+       # data type
+       my $mode = $ds->{MODE};
+
+       # captured data (see docs for explanation)
+       my $primary_data = $ds->{META};
+       my $tags = $ds->{META}{TAGS};
+
+       # raw unparsed data
+       my $raw = $ds->{DATA};
+
+       # start and length of data
+       my $start = $ds->{START};
+       my $start = $ds->{LENGTH};
+   }
+
+   # alternatively, retrieve slightly higher level queryable decorator for above
+   # hash reference
+
+   while (my $ds = $in->next_dataset) {
+       # data type
+       my $mode = $ds->mode;
+
+       # captured data (see docs for explanation)
+       my $primary_data = $ds->meta;
+       # names of any META tags
+       my @meta_names = $ds->meta_names;
+       my $tags = $ds->tags;
+
+       # raw unparsed data
+       my $raw = $ds->data;
+
+       # start and length of data
+       my $start = $ds->start;
+       my $start = $ds->length;
+   }
+
+=head1 DESCRIPTION
+
+Currently, perl-based parsers for common bioinformatics data are hard-coded to a
+specific API or to use a particular object system (BioPerl, Bio::Phylo, etc).
+Unfortunately, this has led to a number of redundancies for various parsers,
+with the some formats (GFF3, NeXML, etc) being re-implemented several times to
+accomplish varying end-tasks, such as generation of queryable instances,
+persistence of data, indexing of files, generation of structure data such as
+JSON, format validation, and so forth. Furthermore, parser optimizations
+(such as alternative implementations or using XS-based parsers) are impractical.
+
+Bio::Parse is a collection of low-level parsers for common bioinformatics
+formats that attempts to solve this to a degree by decoupling parsing from any
+object systems that may be used to represent the data for downstream analyses.
+As most data in bioinformatics applications represent one or more common types
+(sequences, alignments, features, annotation, phylogenetic information,
+structures, etc), these parsers attempt to be slightly smarter with the data
+parsed by clustering related data instead of passing simple events, though
+events are supported by default.
+
+As an example, GenBank format is composed of three basic sections: annotations,
+features, and raw sequence data. Annotations have a general name: LOCUS,
+ACCESSION, etc. associated with simple text information. Features are defined in
+a specific document and thus have a fairly rigid structure of location
+information (a location string) and simple tag-value pairs. Formatted sequence
+data can be parsed to retrieve only raw sequence.
+
+Data from a GenBank file are returned as a stream of tagged data. Files are
+handled as well as file handles:
+
+   use Bio::Parse;
+
+   # use 'fh' for filehandles
+   my $in = Bio::Parse->new(format  => 'genbank', file  => $file);
+
+Data is returned either as a structured hash reference:
+
+   while (my $hr = $in->next_hr) {
+       ...
+   }
+
+or as a blessed decorator object around the hash reference
+(L<Bio::Parse::DataSet>):
+
+   while (my $hr = $in->next_dataset) {
+       ...
+   }
+
+Data structures have a fairly simple defined set of data.  An example of GenBank
+annotation:
+
+    {
+   'MODE'   => 'ANNOTATION',
+   'DATA'   => 'ACCESSION   D10483 J01597 J01683 J01706 K01298 K01990'
+   'META' => {
+        'KEY'   => 'ACCESSION',
+        'VALUE' => 'D10483 J01597 J01683 J01706 K01298 K01990'
+        }
+   'TAGS'  => {
+        'accession' => ['D10483','J01597','J01683','J01706','K01298','K01990']
+    },
+   'START'  => 139,
+   'LENGTH' => 128
+   }
+
+=over 3
+
+=item * MODE
+
+A simple string specifying the type of data.  Required.
+
+=item * DATA
+
+The raw unparsed data. Required, but can be undef. The MODE and DATA would
+correspond roughly to an XML tag and data.
+
+=item * META
+
+A defined set of key-value pairs based on the mode, where the values are simple
+scalar values. This could correspond to XML elements for tags.
+
+For an annotation, this might be something as simple as:
+
+   'MODE'   => 'ANNOTATION',
+   'META' => {
+        'KEY'   => 'ACCESSION',
+        'VALUE' => 'D10483 J01597 J01683 J01706 K01298 K01990'
+        }
+
+This differs from the raw data in that the data may be processed to remove new
+lines.
+
+May be empty, depending on the MODE and the parse level (TODO: NYI).
+
+=item * TAGS
+
+A defined set of key-value pairs based on both the mode and data in the META
+set. For instance, in the example above, the raw string of space-separated
+accessions can be further processed to an array of accessions:
+
+   'TAGS'  => {
+        'accession' => ['D10483','J01597','J01683','J01706','K01298','K01990']
+    },
+
+Values B<MUST> be an array, but tags are somewhat free-form. If more complex
+relations are required (hierarchal data), it is highly suggested that one break
+the data up into simpler values or return it unmodified for downstream handlers
+to deal with accordingly.
+
+May be empty, depending on the MODE and the parse level (TODO: NYI).
+
+As might be guessed (and somewhat like XML), TAGS and META data can be somewhat
+interchangeable.
+
+=item * START
+
+The place in the stream where the data begins. Not required but highly
+recommended (can be used for indexers)
+
+=item * LENGTH
+
+Length of the B<raw data> in the stream. Not required but highly recommended
+(can be used for indexers)
+
+=head1 SUBROUTINES/METHODS
+
+<TODO>
+
+=head1 CONFIGURATION AND ENVIRONMENT
+
+<TODO>
+
+=head1 DEPENDENCIES
+
+The basic implementations contained in this distribution aim to be very
+low-level and require few dependencies. At the moment Bio::Parse requires a
+minimum of perl 5.12.0, though we could feasibly use older versions (patches
+welcome!). We use L<Class::Load> for run-time loading of the various format
+plugin modules, L<Any::URI::Escape> for GFF3-based symbol handling, and
+
+=head1 INCOMPATIBILITIES
+
+<TODO>
+
+=head1 BUGS AND LIMITATIONS
+
+=head2 TODO
+
+=over 3
+
+=item * DataSet decorator is immutable, needs simple getter/setters
+
+Unlike the hash-reference structure, the Bio::Parse:: DataSet is currently
+immutable.
+
+=item * META tags are hard-coded
+
+Need a simple framework for defining/mapping META names for hash references
+in cases where one may want an alternative naming structure (e.g. for passing
+the data as '-'-prefixed named arguments to a BioPerl class, for instance).
+
+=item * Implement stack-based structure?
+
+Already something remedial in place for this, but the interface is very simple,
+is private, and doesn't currently allow getting/setting data for intermediate
+values on the stack, nor looking up data on the stack by position.
+
+=back
+
+User feedback is an integral part of the evolution of this and other Biome and
+BioPerl modules. Send your comments and suggestions preferably to one of the
+BioPerl mailing lists. Your participation is much appreciated.
+
+  bioperl-l@bioperl.org                  - General discussion
+  http://bioperl.org/wiki/Mailing_lists  - About the mailing lists
+
+Patches are always welcome.
+
+=head2 Reporting Bugs
+
+Bug reports should be reported to the GitHub Issues bug tracking system:
+
+  http://github.com/cjfields/Bio-Parse/issues
+
+=head1 SEE ALSO
+
+L<BioPerl>, L<Bio::Phylo>
+
+=head1 (DISCLAIMER OF) WARRANTY
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+=head1 ACKNOWLEDGEMENTS
+
+Most of this work is based on parsers written for the BioPerl suite of modules
+(of which I am a core developer).  I would like to acknowledge all contributors
+to the BioPerl project for their code and help.
+
+=head1 AUTHOR
+
+Chris Fields  C<< <cjfields at bioperl dot org> >>
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2011 Chris Fields (cjfields at bioperl dot org). All rights reserved.
+
+followed by whatever licence you wish to release it under.
+For Perl code that is often just:
+
+This module is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself. See L<perlartistic>.
 
 Pre-POD ramblings:
 
