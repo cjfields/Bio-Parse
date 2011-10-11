@@ -2,7 +2,7 @@ package Bio::Parse;
 
 # ABSTRACT: Somewhat low-level biological file format parser
 
-use 5.012; # get nice 5.12 features like yada, may revert to 5.10 at some point
+use 5.010;
 use strict;
 use warnings;
 #use IO::Unread;  # pushback buffering, stack-based
@@ -44,7 +44,7 @@ sub new {
             ($param{format}, $param{variant}) = split('-', $param{format}, 2);
         }
 
-        my $module = "Bio::Parse::$param{format}";
+        my $module = "Bio::Parse::Plugin::$param{format}";
         $class->_load_format_module($module);
         return $module->new(%param);
     }
@@ -478,4 +478,3 @@ For Perl code that is often just:
 
 This module is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself. See L<perlartistic>.
-

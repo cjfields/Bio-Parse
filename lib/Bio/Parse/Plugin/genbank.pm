@@ -1,4 +1,4 @@
-package Bio::Parse::genbank;
+package Bio::Parse::Plugin::genbank;
 
 use 5.010;
 use strict;
@@ -95,4 +95,3 @@ sub next_hr {
 1;
 
 __END__
-

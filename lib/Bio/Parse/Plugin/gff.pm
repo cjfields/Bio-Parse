@@ -1,4 +1,4 @@
-package Bio::Parse::gff;
+package Bio::Parse::Plugin::gff;
 
 use 5.010;
 use strict;

@@ -28,7 +28,7 @@ sub meta {
 }
 
 sub tag_names {
-    return keys(%{$_[0]->{META}{TAG}}) if exists $_[0]->{META}{TAG};
+    return keys(%{$_[0]->{TAG}}) if exists $_[0]->{TAG};
 }
 
 sub tags {

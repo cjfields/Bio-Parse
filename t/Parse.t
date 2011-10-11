@@ -23,27 +23,27 @@ lives_ok {$parser = Bio::Parse->new(format => 'gff',
                                     fh     => $fh)};
 
 isa_ok($parser, 'Bio::Parse');
-isa_ok($parser, 'Bio::Parse::gff');
+isa_ok($parser, 'Bio::Parse::Plugin::gff');
 is($parser->format, 'gff');
 is($parser->variant, undef);
 
 lives_ok {$parser = Bio::Parse->new(format => 'gff-v3',
                                     fh     => $fh)};
-isa_ok($parser, 'Bio::Parse::gff');
+isa_ok($parser, 'Bio::Parse::Plugin::gff');
 is($parser->format, 'gff');
 is($parser->variant, 'v3');
 
 close $fh;
 
 {
-    sub Bio::Parse::gff::foo {
+    sub Bio::Parse::Plugin::gff::foo {
         my $self = shift;
         $self->method_not_implemented;
     }
     lives_ok {$parser = Bio::Parse->new(format => 'gff',
                                     fh     => $fh)};
 
-    is($parser->foo, 'Bio::Parse::gff::foo is not implemented by Bio::Parse::gff');
+    is($parser->foo, 'Bio::Parse::Plugin::gff::foo is not implemented by Bio::Parse::Plugin::gff');
 }
 
 unlink 'test.foo';
