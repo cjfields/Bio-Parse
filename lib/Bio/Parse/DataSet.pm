@@ -28,18 +28,18 @@ sub meta {
 }
 
 sub tag_names {
-    return keys(%{$_[0]->{TAG}}) if exists $_[0]->{TAG};
+    return keys(%{$_[0]->{TAGS}}) if exists $_[0]->{TAGS};
 }
 
 sub tags {
     my ($self, $tag_name) = @_;
-    return @{$self->{META}{TAG}{$tag_name}} if exists $self->{META}{TAG}{$tag_name};
-    return $self->{META}{TAG} if exists $self->{META}{TAG};
+    return @{$self->{TAGS}{$tag_name}} if exists $self->{TAGS}{$tag_name};
+    return $self->{TAGS} if exists $self->{TAGS};
 }
 
 sub tag {
     my ($self, $tag_name) = @_;
-    return $self->{META}{TAG}{$tag_name}[0] if exists $self->{META}{TAG}{$tag_name};
+    return $self->{TAGS}{$tag_name}[0] if exists $self->{TAGS}{$tag_name};
 }
 
 1;
