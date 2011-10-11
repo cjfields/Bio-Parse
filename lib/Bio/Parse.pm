@@ -9,7 +9,8 @@ use IO::Unread;  # pushback buffering, stack-based
 use Bio::Parse::DataSet;
 use Scalar::Util qw(blessed);
 use Carp ();
-use Class::Load;
+#use Class::Load;
+use Module::Load;
 
 our $CACHE_SIZE = 1;
 
@@ -168,7 +169,7 @@ sub add_meta_data {
 sub _load_format_module {
     my ($ci, $module) = @_;
 
-    eval { Class::Load::load_class($module); 1 } ;
+    eval { load($module); 1 } ;
     if ( $@ ) {
         $ci->throw(<<END);
 $ci: $module cannot be found
