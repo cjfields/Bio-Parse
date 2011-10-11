@@ -124,14 +124,9 @@ sub method_not_implemented {
     (caller(1))[3]." is not implemented by ".ref($self)
 }
 
-<<<<<<< Updated upstream
-# a very simplistic API for working on, modifying, and switching out datasets
-# do not rely on until stable!  Not required of base modules...
-=======
 # A very simplistic API for working on, modifying, and switching out datasets.
 # This may switch to a stack-based method to deal with more complex formats. Do
 # not rely on until stable!
->>>>>>> Stashed changes
 
 sub new_dataset {
     my ($self, $ds) = @_;
