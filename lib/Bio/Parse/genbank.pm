@@ -28,7 +28,7 @@ sub next_hr {
                 #    $self->append_data($seq);
                 #    next PARSER;
                 #} else {
-                    $self->new_dataset(
+                    $self->_new_dataset(
                         {MODE    => 'SEQUENCE',
                          DATA   => $seq}
                     );
@@ -37,7 +37,7 @@ sub next_hr {
             # annotation and feature key
             when (m{^(\s{0,5})([\w'-]+)\s*([^\n]*)$}ox) {
                 if (length($1) < 5) {
-                    $self->new_dataset({
+                    $self->_new_dataset({
                             MODE    => 'ANNOTATION',
                             DATA    => $3,
                             META    => {
@@ -45,7 +45,7 @@ sub next_hr {
                                 }
                         });
                 } else {
-                    $self->new_dataset(
+                    $self->_new_dataset(
                         {
                             MODE    => 'FEATURE',
                             DATA    => $3,
@@ -59,7 +59,7 @@ sub next_hr {
                 }
             }
             when (index($_, '//') == 0) {
-                $self->new_dataset(
+                $self->_new_dataset(
                     {
                         MODE    => 'RECORD_END',
                         DATA    => $_
@@ -68,26 +68,26 @@ sub next_hr {
             }
             default {
                 s/^\s+//;
-                if ($self->current_mode eq 'FEATURE') {
+                if ($self->_current_mode eq 'FEATURE') {
                     if (m{^/([^=]+)=?(.+)?}) {
-                        $self->add_meta_data({$1 => $2});
+                        $self->_add_meta_data({$1 => $2});
                         $self->{_current_ft_label} = $1;
                     } else {
-                        $self->append_data($self->{_current_ft_label}, $_);
+                        $self->_append_data($self->{_current_ft_label}, $_);
                         next PARSER;
                     }
                 } else {
-                    $self->append_data($_);
+                    $self->_append_data($_);
                     next PARSER;
                 }
             }
         }
-        if ($self->num_datasets() > $Bio::Parse::CACHE_SIZE ) {
-            return $self->pop_dataset();
+        if ($self->_num_datasets() > $Bio::Parse::CACHE_SIZE ) {
+            return $self->_pop_dataset();
         }
     }
-    if ($self->num_datasets()) {
-        return $self->pop_dataset();
+    if ($self->_num_datasets()) {
+        return $self->_pop_dataset();
     }
     return;
 }

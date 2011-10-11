@@ -5,7 +5,7 @@ package Bio::Parse;
 use 5.012; # get nice 5.12 features like yada, may revert to 5.10 at some point
 use strict;
 use warnings;
-use IO::Unread;  # pushback buffering, stack-based
+#use IO::Unread;  # pushback buffering, stack-based
 use Bio::Parse::DataSet;
 use Scalar::Util qw(blessed);
 use Carp ();
@@ -99,10 +99,10 @@ sub next_dataset {
 # utility methods for parsers
 
 # simplified pushback using IO::UnRead
-sub pushback {
-    my ($self, $value) = @_;
-    unread $self->fh, $value if defined($value);
-}
+#sub pushback {
+#    my ($self, $value) = @_;
+#    unread $self->fh, $value if defined($value);
+#}
 
 # simple base exceptions, just uses Carp
 sub throw {
@@ -126,29 +126,28 @@ sub method_not_implemented {
 }
 
 # A very simplistic API for working on, modifying, and switching out datasets.
-# This may switch to a stack-based method to deal with more complex formats. Do
-# not rely on until stable!
+# Making these methods private, do NOT rely on these being stable.
 
-sub new_dataset {
+sub _new_dataset {
     my ($self, $ds) = @_;
     unshift @{$self->{datasets}}, $ds;
 }
 
-sub num_datasets {
+sub _num_datasets {
     scalar(@{shift->{datasets}});
 }
 
-sub current_dataset { shift->{datasets}[0]; }
+sub _current_dataset { shift->{datasets}[0]; }
 
-sub current_mode { shift->{datasets}[0]{MODE}; }
+sub _current_mode { shift->{datasets}[0]{MODE}; }
 
-sub pop_dataset {
+sub _pop_dataset {
     my $self = shift;
     pop @{$self->{datasets}};
 }
 
 # TODO: append could be smarter and not add newlines, just sayin'
-sub append_data {
+sub _append_data {
     my ($self, @args) = @_;
     if (@args == 2) {
         $self->{datasets}[0]{META}{$args[0]}[0] .= "\n$args[1]";
@@ -158,7 +157,7 @@ sub append_data {
     1;
 }
 
-sub add_meta_data {
+sub _add_meta_data {
     my ($self, $meta) = @_;
     while (my ($key, $value) = each %$meta) {
         push @{$self->{datasets}[0]{META}{$key}}, $value;
