@@ -43,7 +43,7 @@ sub _initialize {
     #$self->{meta_map} = \%META_MAP;
 }
 
-sub next_dataset {
+sub next_hr {
     my $self = shift;
     my $fh = $self->fh;
     #my $meta_map = $self->meta_map;

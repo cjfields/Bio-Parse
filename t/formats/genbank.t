@@ -159,7 +159,7 @@ for my $file (sort keys %test_data) {
                                  file      => cat_file('genbank', $file) );
     my %data;
     my $ct = 0;
-    while (my $ds = $parser->next_dataset) {
+    while (my $ds = $parser->next_hr) {
         push @{$data{$ds->{MODE}}}, $ds;
     }
     for my $type (sort keys %$expected) {

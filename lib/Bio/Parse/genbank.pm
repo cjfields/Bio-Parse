@@ -9,7 +9,7 @@ use Data::Dumper;
 # may hard-code this, uncertain yet...
 $Bio::Parse::CACHE_SIZE = 2;
 
-sub next_dataset {
+sub next_hr {
     my $self = shift;
     my $fh = $self->fh;
     PARSER:

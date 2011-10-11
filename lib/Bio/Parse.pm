@@ -87,12 +87,12 @@ sub meta_map {
 }
 
 # grab next chunk of data from fh (implement in actual parser!)
-sub next_dataset {...}
+sub next_hr {...}
 
 # method to wrap data structure in a queryable object
-sub next_instance {
+sub next_dataset {
     my $self = shift;
-    my $ds = $self->next_dataset;
+    my $ds = $self->next_hr;
     defined $ds ? return Bio::Parse::DataSet->new($ds) : return;
 }
 
