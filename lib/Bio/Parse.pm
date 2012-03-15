@@ -94,9 +94,10 @@ sub next_hr {
 
 # method to wrap data structure in a queryable object
 sub next_dataset {
-    my $self = shift;
-    my $ds = $self->next_hr;
-    defined $ds ? return Bio::Parse::DataSet->new($ds) : return;
+    shift->next_hr;
+    #my $self = shift;
+    #my $ds = $self->next_hr;
+    #defined $ds ? return Bio::Parse::DataSet->new($ds) : return;
 }
 
 # utility methods for parsers
