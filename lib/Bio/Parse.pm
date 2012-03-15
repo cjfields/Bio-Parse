@@ -5,12 +5,10 @@ package Bio::Parse;
 use 5.010;
 use strict;
 use warnings;
-#use IO::Unread;  # pushback buffering, stack-based
 use Bio::Parse::DataSet;
 use Scalar::Util qw(blessed);
 use Carp ();
-#use Class::Load;
-use Module::Load;
+use Class::Load qw(try_load_class);
 
 our $CACHE_SIZE = 1;
 
@@ -171,12 +169,13 @@ sub _add_meta_data {
 # lifted from Bio::SeqIO, but using Module::Load
 sub _load_format_module {
     my ($ci, $module) = @_;
-
-    eval { load($module); 1 } ;
-    if ( $@ ) {
+    
+    my ($success, $status) = try_load_class($module) ;
+    
+    if ( !$success ) {
         $ci->throw(<<END);
 $ci: $module cannot be found
-Exception $@
+Exception $status
 For more information about the Bio::Parse system please see the Bio::Parse docs.
 END
         ;
