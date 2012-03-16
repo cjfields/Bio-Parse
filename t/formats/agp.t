@@ -2,6 +2,7 @@ use 5.010;
 use Test::Most;
 use Bio::Parse;
 use File::Spec;
+use Data::Dumper;
 
 my %test_data = (
     'chr_from_contig_BAC.v1.1.agp'  => {
@@ -45,11 +46,11 @@ for my $file (sort keys %test_data) {
     my %data;
     my $ct = 0;
     while (my $ds = $parser->next_hr) {
+        #say STDERR Dumper $ds if $ds->{MODE} eq 'ANNOTATION';
         push @{$data{$ds->{MODE}}}, $ds;
     }
     for my $type (sort keys %$expected) {
         is(@{$data{$type}}, $expected->{$type}, "$file $type");
-        # TODO: need deeper testing of data here
     }
 }
 

@@ -9,8 +9,9 @@ use Data::Dumper;
 
 my %MODE_MAP = (
     'FEATURE'       => \&_agp_feature,
-    'ANNOTATION'    => \&_agp_comment,
+    'ANNOTATION'    => \&_agp_annotation,
 );
+
 
 my @COLUMNS = qw(object
     object_beg
@@ -23,33 +24,50 @@ my @COLUMNS = qw(object
     component_end/linkage
     orientation/linkage_evidence);
 
+sub _initialize {
+    my $self = shift;
+    $self->{csv} = Text::CSV->new({sep_char => "\t"});
+    $self->{csv}->bind_columns(\@{$self->{cache}}{@COLUMNS});
+    1;
+}
+
 sub next_hr {
     my $self = shift;
     my $fh = $self->fh;
     PARSER:
     while (<$fh>) {
-        my $data;
-        if (/^\#+\s*([^\n]+)/) {
-            $data = {
+        $self->{csv}->parse($_);
+        if ($self->{cache}->{object} =~ /^\#+\s*([^\n]+)/) {
+            return _agp_annotation({
                 MODE    => 'ANNOTATION',
                 DATA    => $1,
-            };
+            });
         } else {
-            chomp;
-            my %meta;
-            @meta{@COLUMNS} = split(/\t/);
-            $data = {
+            return _agp_feature({
                 MODE    => 'FEATURE',
                 DATA    => $_,
-                META    => \%meta
-            };
+                META    => $self->{cache}
+            });
         }
-        $self->_new_dataset($data);
-    }
-    if ($self->_num_datasets()) {
-        return $self->_pop_dataset();
     }
     return;
+}
+
+# transformers
+sub _agp_annotation {
+    my $data = shift;
+    if ($data->{DATA} =~ /^([A-Z\s]+):\s*(.*)/) {
+        $data->{META} = {
+            NAME        => $1,
+            VALUE       => $2
+        };
+    }
+    $data;
+}
+
+sub _agp_feature {
+    my $data = shift;
+    $data;
 }
 
 1;
