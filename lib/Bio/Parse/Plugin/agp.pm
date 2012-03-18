@@ -12,22 +12,21 @@ my %MODE_MAP = (
     'ANNOTATION'    => \&_agp_annotation,
 );
 
-
-my @COLUMNS = qw(object
-    object_beg
-    object_end
-    part_number
-    component_type
-    component_id
-    component_type/gap_length
-    component_beg/gap_type
-    component_end/linkage
-    orientation/linkage_evidence);
+my %COLUMNS = (
+    'gap' => [
+        qw( id start end part_number component_type gap_length   gap_type
+        linkage linkage_evidence
+        )],
+    'seq'   => [
+        qw( id start end part_number component_type component_id component_start
+        component_end strand)
+    ]
+);
 
 sub _initialize {
     my $self = shift;
     $self->{csv} = Text::CSV->new({sep_char => "\t"});
-    $self->{csv}->bind_columns(\@{$self->{cache}}{@COLUMNS});
+    $self->{csv}->bind_columns(\@{$self->{cache}}[0..8]);
     1;
 }
 
@@ -37,18 +36,23 @@ sub next_hr {
     PARSER:
     while (<$fh>) {
         $self->{csv}->parse($_);
-        if ($self->{cache}->{object} =~ /^\#+\s*([^\n]+)/) {
+        if ($self->{cache}->[0] =~ /^\#+\s*([^\n]+)/) {
             return _agp_annotation({
                 MODE    => 'ANNOTATION',
                 DATA    => $1,
             });
-        } else {
-            return _agp_feature({
-                MODE    => 'FEATURE',
-                DATA    => $_,
-                META    => $self->{cache}
-            });
         }
+        my $meta;
+        if ($self->{cache}->[4] eq 'N' || $self->{cache}->[4] eq 'U') {
+            @{$meta}{@{$COLUMNS{gap}}} = @{$self->{cache}};
+        } else {
+            @{$meta}{@{$COLUMNS{seq}}} = @{$self->{cache}};
+        }
+        return {
+            MODE    => 'FEATURE',
+            DATA    => $_,
+            META    => $meta
+            }
     }
     return;
 }
