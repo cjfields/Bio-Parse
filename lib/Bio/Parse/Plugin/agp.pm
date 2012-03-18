@@ -36,7 +36,7 @@ sub next_hr {
     PARSER:
     while (<$fh>) {
         $self->{csv}->parse($_);
-        if ($self->{cache}->[0] =~ /^\#+\s*([^\n]+)/) {
+        if ($self->{cache}->[0] =~ /^\#+\s*([^\n]*)/) {
             return _agp_annotation({
                 MODE    => 'ANNOTATION',
                 DATA    => $1,
